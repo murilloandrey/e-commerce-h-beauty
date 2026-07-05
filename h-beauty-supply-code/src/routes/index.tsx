@@ -306,8 +306,8 @@ function Index() {
         </div>
         <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
           {[
-            { city: "Spring, TX", addr: "25823 I-45 N, Spring, TX 77380", hours: "Mon–Sat 10a–8p · Sun 12–6p" },
-            { city: "Katy, TX", addr: "1234 Katy Fwy, Katy, TX 77494", hours: "Mon–Sat 10a–8p · Sun 12–6p" },
+            { city: "Spring, TX", addr: "25823 I-45 N, Spring, TX 77380", hours: "Mon–Sat 10a–8p · Sun 12–6p", mapUrl: "https://maps.app.goo.gl/XTvnxtMa8x4weuwC7" },
+            { city: "Katy, TX", addr: "1234 Katy Fwy, Katy, TX 77494", hours: "Mon–Sat 10a–8p · Sun 12–6p", mapUrl: "https://maps.app.goo.gl/ZinU7SSrNqYRAFWt9" },
           ].map((loc) => (
             <div key={loc.city} className="holo-border rounded-3xl p-6 sm:p-8 bg-card">
               <div className="flex items-start justify-between gap-4">
@@ -325,7 +325,7 @@ function Index() {
               </div>
               <div className="mt-6 flex gap-2">
                 <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.addr)}`}
+                  href={loc.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn-outline-pink px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider"
