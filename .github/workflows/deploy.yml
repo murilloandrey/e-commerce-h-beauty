@@ -32,7 +32,7 @@ jobs:
         run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: h-beauty-supply-code/dist
+          path: h-beauty-supply-code/.output/public
 
   deploy:
     needs: build
