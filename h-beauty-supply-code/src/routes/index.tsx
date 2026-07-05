@@ -1,6 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
 import { useProducts } from "@/hooks/useShopify";
-import { ShoppingBag, Menu, Star, MapPin, Instagram, Music2, Plus } from "lucide-react";
+import { createCheckout } from "@/lib/shopify";
+import { Toaster } from "@/components/ui/sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ShoppingBag, Menu, Star, MapPin, Instagram, Music2, Plus, Loader2 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import hero from "@/assets/hero.jpg";
 import catWigs from "@/assets/cat-wigs.jpg";
@@ -35,7 +40,7 @@ const CATEGORIES = [
   { name: "Accessories", img: catAccessories, href: "#accessories" },
 ];
 
-const STATIC_PRODUCTS = [
+const STATIC_PRODUCTS: { id?: string; name: string; price: string; tag: string; img: string; variantId?: string }[] = [
   { name: "Silk Straight 24\" Lace Front", price: "$149", tag: "Bestseller", img: p1 },
   { name: "Honey Body Wave 22\" Wig", price: "$179", tag: "New", img: p2 },
   { name: "Passion Twist Crochet 18\"", price: "$18", tag: "Restock", img: p3 },
@@ -52,6 +57,25 @@ const MARQUEE = [
 function Index() {
   const { products: shopifyProducts, loading } = useProducts();
   const PRODUCTS = shopifyProducts.length > 0 ? shopifyProducts : STATIC_PRODUCTS;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [checkingOutId, setCheckingOutId] = useState<string | null>(null);
+
+  async function handleAddToCart(product: (typeof PRODUCTS)[number]) {
+    if (!product.variantId) {
+      toast.error("This product isn't available online yet — come see us in store!");
+      return;
+    }
+    setCheckingOutId(product.variantId);
+    try {
+      const checkoutUrl = await createCheckout(product.variantId);
+      window.location.href = checkoutUrl;
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't start checkout. Please try again.");
+      setCheckingOutId(null);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* NAV */}
@@ -69,16 +93,35 @@ function Index() {
             ))}
           </nav>
           <div className="flex items-center gap-2 justify-end">
-            <button aria-label="Menu" className="lg:hidden h-10 w-10 grid place-items-center rounded-full border border-white/10">
+            <button aria-label="Menu" onClick={() => setMobileMenuOpen(true)} className="lg:hidden h-10 w-10 grid place-items-center rounded-full border border-white/10">
               <Menu className="h-5 w-5" />
             </button>
-            <button aria-label="Cart" className="relative h-10 w-10 grid place-items-center rounded-full btn-pink">
+            <a href="#products" aria-label="Cart" className="relative h-10 w-10 grid place-items-center rounded-full btn-pink">
               <ShoppingBag className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-white text-[10px] font-bold text-[color:var(--hot-pink)] grid place-items-center">2</span>
-            </button>
+            </a>
           </div>
         </div>
       </header>
+
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="right">
+          <SheetHeader>
+            <SheetTitle className="font-serif">H Beauty Supply</SheetTitle>
+          </SheetHeader>
+          <nav className="mt-6 flex flex-col gap-1">
+            {NAV.map((n) => (
+              <a
+                key={n.label}
+                href={n.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-3 text-base border-b border-white/10 text-muted-foreground hover:text-[color:var(--hot-pink)] transition-colors"
+              >
+                {n.label}
+              </a>
+            ))}
+          </nav>
+        </SheetContent>
+      </Sheet>
 
       {/* HERO */}
       <section id="top" className="relative pt-16">
@@ -198,7 +241,7 @@ function Index() {
 
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {PRODUCTS.map((p) => (
-            <article key={p.name} className="group rounded-3xl bg-white text-neutral-900 overflow-hidden flex flex-col">
+            <article key={p.id ?? p.name} className="group rounded-3xl bg-white text-neutral-900 overflow-hidden flex flex-col">
               <div className="relative aspect-square bg-neutral-100 overflow-hidden">
                 <img src={p.img} alt={p.name} loading="lazy" width={700} height={800} className="h-full w-full object-cover group-hover:scale-105 transition duration-500" />
                 <span className="absolute top-3 left-3 text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-black text-white">{p.tag}</span>
@@ -212,8 +255,18 @@ function Index() {
                   {[0,1,2,3,4].map(i => <Star key={i} className="h-3 w-3 fill-[color:var(--hot-pink)] text-[color:var(--hot-pink)]" />)}
                   <span className="ml-1">(128)</span>
                 </div>
-                <button className="btn-pink mt-auto w-full py-3 rounded-full font-bold text-xs sm:text-sm uppercase tracking-wider">
-                  Add to Cart
+                <button
+                  onClick={() => handleAddToCart(p)}
+                  disabled={!!p.variantId && checkingOutId === p.variantId}
+                  className="btn-pink mt-auto w-full py-3 rounded-full font-bold text-xs sm:text-sm uppercase tracking-wider disabled:opacity-60 inline-flex items-center justify-center gap-2"
+                >
+                  {p.variantId && checkingOutId === p.variantId ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Adding...
+                    </>
+                  ) : (
+                    "Add to Cart"
+                  )}
                 </button>
               </div>
             </article>
@@ -267,8 +320,14 @@ function Index() {
                 <div>{loc.hours}</div>
               </div>
               <div className="mt-6 flex gap-2">
-                <a href="#" className="btn-outline-pink px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider">Get Directions</a>
-                <a href="tel:+1" className="px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider border border-white/15 hover:bg-white/5">Call</a>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.addr)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline-pink px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider"
+                >
+                  Get Directions
+                </a>
               </div>
             </div>
           ))}
@@ -317,7 +376,7 @@ function Index() {
           </div>
         </div>
       </footer>
+      <Toaster />
     </div>
   );
 }
-// Shopify hook added
