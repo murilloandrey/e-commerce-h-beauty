@@ -61,17 +61,15 @@ function Index() {
   const [checkingOutId, setCheckingOutId] = useState<string | null>(null);
 
   async function handleAddToCart(product: (typeof PRODUCTS)[number]) {
-    if (!product.variantId) {
-      toast.error("This product isn't available online yet — come see us in store!");
-      return;
-    }
+    if (!product.variantId) return;
     setCheckingOutId(product.variantId);
     try {
       const checkoutUrl = await createCheckout(product.variantId);
-      window.location.href = checkoutUrl;
+      window.open(checkoutUrl, "_blank", "noopener,noreferrer");
     } catch (err) {
       console.error(err);
       toast.error("Couldn't start checkout. Please try again.");
+    } finally {
       setCheckingOutId(null);
     }
   }
@@ -243,7 +241,11 @@ function Index() {
           {PRODUCTS.map((p) => (
             <article key={p.id ?? p.name} className="group rounded-3xl bg-white text-neutral-900 overflow-hidden flex flex-col">
               <div className="relative aspect-square bg-neutral-100 overflow-hidden">
-                <img src={p.img} alt={p.name} loading="lazy" width={700} height={800} className="h-full w-full object-cover group-hover:scale-105 transition duration-500" />
+                {p.img ? (
+                  <img src={p.img} alt={p.name} loading="lazy" width={700} height={800} className="h-full w-full object-cover group-hover:scale-105 transition duration-500" />
+                ) : (
+                  <div className="h-full w-full bg-gradient-to-br from-pink-200 via-fuchsia-100 to-purple-200" />
+                )}
                 <span className="absolute top-3 left-3 text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-black text-white">{p.tag}</span>
               </div>
               <div className="p-4 sm:p-5 flex flex-col gap-3 flex-1">
@@ -257,10 +259,12 @@ function Index() {
                 </div>
                 <button
                   onClick={() => handleAddToCart(p)}
-                  disabled={!!p.variantId && checkingOutId === p.variantId}
+                  disabled={!p.variantId || checkingOutId === p.variantId}
                   className="btn-pink mt-auto w-full py-3 rounded-full font-bold text-xs sm:text-sm uppercase tracking-wider disabled:opacity-60 inline-flex items-center justify-center gap-2"
                 >
-                  {p.variantId && checkingOutId === p.variantId ? (
+                  {!p.variantId ? (
+                    "Sold Out"
+                  ) : checkingOutId === p.variantId ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" /> Adding...
                     </>

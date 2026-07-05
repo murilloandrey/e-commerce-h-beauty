@@ -1,21 +1,33 @@
 import { n as __toESM } from "../_runtime.mjs";
-import { n as require_jsx_runtime, r as require_react } from "../_libs/react+tanstack__react-query.mjs";
-import { a as Menu, i as Music2, n as ShoppingBag, o as MapPin, r as Plus, s as Instagram, t as Star } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-Di7MjNrp.js
+import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].mjs";
+import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
+import { a as DialogOverlay, i as DialogDescription, n as DialogClose, o as DialogPortal, r as DialogContent, s as DialogTitle, t as Dialog } from "../_libs/@radix-ui/react-dialog+[...].mjs";
+import { n as toast, t as Toaster } from "../_libs/sonner.mjs";
+import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
+import { a as Music2, c as LoaderCircle, i as Plus, l as Instagram, n as Star, o as Menu, r as ShoppingBag, s as MapPin, t as X } from "../_libs/lucide-react.mjs";
+import { t as twMerge } from "../_libs/tailwind-merge.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-BOSlaEMO.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var domain = "h-beauty-supply-2.myshopify.com";
 var token = "b24eed4e0d70a126eb42c199c64ce035";
 var endpoint = `https://${domain}/api/2024-01/graphql.json`;
-async function shopifyFetch(query) {
-	return (await fetch(endpoint, {
+async function shopifyFetch(query, variables) {
+	const res = await fetch(endpoint, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 			"X-Shopify-Storefront-Access-Token": token
 		},
-		body: JSON.stringify({ query })
-	})).json();
+		body: JSON.stringify({
+			query,
+			variables
+		})
+	});
+	if (!res.ok) throw new Error(`Shopify request failed with status ${res.status}`);
+	const json = await res.json();
+	if (json.errors?.length) throw new Error(json.errors[0].message ?? "Shopify request failed");
+	return json;
 }
 async function getProducts() {
 	return (await shopifyFetch(`{
@@ -54,11 +66,31 @@ async function getProducts() {
 		id: e.node.id,
 		name: e.node.title,
 		price: `$${parseFloat(e.node.priceRange.minVariantPrice.amount).toFixed(2)}`,
-		img: e.node.images.edges[0]?.node.url ?? "/placeholder.jpg",
+		img: e.node.images.edges[0]?.node.url,
 		alt: e.node.images.edges[0]?.node.altText ?? e.node.title,
 		tag: e.node.tags[0] ?? "New",
 		variantId: e.node.variants.edges[0]?.node.id
 	}));
+}
+async function createCheckout(variantId) {
+	const result = (await shopifyFetch(`
+    mutation cartCreate($input: CartInput) {
+      cartCreate(input: $input) {
+        cart {
+          checkoutUrl
+        }
+        userErrors {
+          message
+        }
+      }
+    }
+  `, { input: { lines: [{
+		merchandiseId: variantId,
+		quantity: 1
+	}] } })).data.cartCreate;
+	if (result.userErrors?.length) throw new Error(result.userErrors[0].message);
+	if (!result.cart?.checkoutUrl) throw new Error("Shopify did not return a checkout URL");
+	return result.cart.checkoutUrl;
 }
 function useProducts() {
 	const [products, setProducts] = (0, import_react.useState)([]);
@@ -73,6 +105,73 @@ function useProducts() {
 		error
 	};
 }
+var Toaster$1 = ({ ...props }) => {
+	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toaster, {
+		className: "toaster group",
+		toastOptions: { classNames: {
+			toast: "group toast group-[.toaster]:bg-background group-[.toaster]:text-foreground group-[.toaster]:border-border group-[.toaster]:shadow-lg",
+			description: "group-[.toast]:text-muted-foreground",
+			actionButton: "group-[.toast]:bg-primary group-[.toast]:text-primary-foreground",
+			cancelButton: "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground"
+		} },
+		...props
+	});
+};
+function cn(...inputs) {
+	return twMerge(clsx(inputs));
+}
+var Sheet = Dialog;
+var SheetPortal = DialogPortal;
+var SheetOverlay = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogOverlay, {
+	className: cn("fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className),
+	...props,
+	ref
+}));
+SheetOverlay.displayName = DialogOverlay.displayName;
+var sheetVariants = cva("fixed z-50 gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500 data-[state=open]:animate-in data-[state=closed]:animate-out", {
+	variants: { side: {
+		top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+		bottom: "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+		left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+		right: "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm"
+	} },
+	defaultVariants: { side: "right" }
+});
+var SheetContent = import_react.forwardRef(({ side = "right", className, children, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetPortal, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetOverlay, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogContent, {
+	ref,
+	className: cn(sheetVariants({ side }), className),
+	...props,
+	children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)(DialogClose, {
+		className: "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary",
+		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(X, { className: "h-4 w-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+			className: "sr-only",
+			children: "Close"
+		})]
+	}), children]
+})] }));
+SheetContent.displayName = DialogContent.displayName;
+var SheetHeader = ({ className, ...props }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	className: cn("flex flex-col space-y-2 text-center sm:text-left", className),
+	...props
+});
+SheetHeader.displayName = "SheetHeader";
+var SheetFooter = ({ className, ...props }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+	className: cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className),
+	...props
+});
+SheetFooter.displayName = "SheetFooter";
+var SheetTitle = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogTitle, {
+	ref,
+	className: cn("text-lg font-semibold text-foreground", className),
+	...props
+}));
+SheetTitle.displayName = DialogTitle.displayName;
+var SheetDescription = import_react.forwardRef(({ className, ...props }, ref) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(DialogDescription, {
+	ref,
+	className: cn("text-sm text-muted-foreground", className),
+	...props
+}));
+SheetDescription.displayName = DialogDescription.displayName;
 var logo_default = "/assets/logo-B3U5E1jT.png";
 var hero_default = "/assets/hero-CHqKzrGU.jpg";
 var cat_wigs_default = "/assets/cat-wigs-B6bIvvo3.jpg";
@@ -187,6 +286,21 @@ var MARQUEE = [
 function Index() {
 	const { products: shopifyProducts, loading } = useProducts();
 	const PRODUCTS = shopifyProducts.length > 0 ? shopifyProducts : STATIC_PRODUCTS;
+	const [mobileMenuOpen, setMobileMenuOpen] = (0, import_react.useState)(false);
+	const [checkingOutId, setCheckingOutId] = (0, import_react.useState)(null);
+	async function handleAddToCart(product) {
+		if (!product.variantId) return;
+		setCheckingOutId(product.variantId);
+		try {
+			const checkoutUrl = await createCheckout(product.variantId);
+			window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+		} catch (err) {
+			console.error(err);
+			toast.error("Couldn't start checkout. Please try again.");
+		} finally {
+			setCheckingOutId(null);
+		}
+	}
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 		className: "min-h-screen bg-background text-foreground overflow-x-hidden",
 		children: [
@@ -219,18 +333,36 @@ function Index() {
 							className: "flex items-center gap-2 justify-end",
 							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
 								"aria-label": "Menu",
+								onClick: () => setMobileMenuOpen(true),
 								className: "lg:hidden h-10 w-10 grid place-items-center rounded-full border border-white/10",
 								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Menu, { className: "h-5 w-5" })
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("button", {
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+								href: "#products",
 								"aria-label": "Cart",
 								className: "relative h-10 w-10 grid place-items-center rounded-full btn-pink",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingBag, { className: "h-4 w-4" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
-									className: "absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-white text-[10px] font-bold text-[color:var(--hot-pink)] grid place-items-center",
-									children: "2"
-								})]
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ShoppingBag, { className: "h-4 w-4" })
 							})]
 						})
 					]
+				})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Sheet, {
+				open: mobileMenuOpen,
+				onOpenChange: setMobileMenuOpen,
+				children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(SheetContent, {
+					side: "right",
+					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetHeader, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(SheetTitle, {
+						className: "font-serif",
+						children: "H Beauty Supply"
+					}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("nav", {
+						className: "mt-6 flex flex-col gap-1",
+						children: NAV.map((n) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+							href: n.href,
+							onClick: () => setMobileMenuOpen(false),
+							className: "py-3 text-base border-b border-white/10 text-muted-foreground hover:text-[color:var(--hot-pink)] transition-colors",
+							children: n.label
+						}, n.label))
+					})]
 				})
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
@@ -447,14 +579,14 @@ function Index() {
 						className: "group rounded-3xl bg-white text-neutral-900 overflow-hidden flex flex-col",
 						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 							className: "relative aspect-square bg-neutral-100 overflow-hidden",
-							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
+							children: [p.img ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)("img", {
 								src: p.img,
 								alt: p.name,
 								loading: "lazy",
 								width: 700,
 								height: 800,
 								className: "h-full w-full object-cover group-hover:scale-105 transition duration-500"
-							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
+							}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { className: "h-full w-full bg-gradient-to-br from-pink-200 via-fuchsia-100 to-purple-200" }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", {
 								className: "absolute top-3 left-3 text-[10px] uppercase tracking-widest font-bold px-2 py-1 rounded-full bg-black text-white",
 								children: p.tag
 							})]
@@ -485,12 +617,14 @@ function Index() {
 									})]
 								}),
 								/* @__PURE__ */ (0, import_jsx_runtime.jsx)("button", {
-									className: "btn-pink mt-auto w-full py-3 rounded-full font-bold text-xs sm:text-sm uppercase tracking-wider",
-									children: "Add to Cart"
+									onClick: () => handleAddToCart(p),
+									disabled: !p.variantId || checkingOutId === p.variantId,
+									className: "btn-pink mt-auto w-full py-3 rounded-full font-bold text-xs sm:text-sm uppercase tracking-wider disabled:opacity-60 inline-flex items-center justify-center gap-2",
+									children: !p.variantId ? "Sold Out" : checkingOutId === p.variantId ? /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(import_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LoaderCircle, { className: "h-4 w-4 animate-spin" }), " Adding..."] }) : "Add to Cart"
 								})
 							]
 						})]
-					}, p.name))
+					}, p.id ?? p.name))
 				})]
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
@@ -584,17 +718,15 @@ function Index() {
 								className: "mt-6 space-y-2 text-sm text-muted-foreground",
 								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: loc.addr }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: loc.hours })]
 							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+							/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
 								className: "mt-6 flex gap-2",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
-									href: "#",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
+									href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.addr)}`,
+									target: "_blank",
+									rel: "noopener noreferrer",
 									className: "btn-outline-pink px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider",
 									children: "Get Directions"
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("a", {
-									href: "tel:+1",
-									className: "px-5 py-3 rounded-full text-xs font-bold uppercase tracking-wider border border-white/15 hover:bg-white/5",
-									children: "Call"
-								})]
+								})
 							})
 						]
 					}, loc.city))
@@ -677,7 +809,8 @@ function Index() {
 						})]
 					})]
 				})
-			})
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Toaster$1, {})
 		]
 	});
 }

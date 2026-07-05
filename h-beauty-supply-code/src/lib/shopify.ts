@@ -60,7 +60,7 @@ export async function getProducts() {
     id: e.node.id,
     name: e.node.title,
     price: `$${parseFloat(e.node.priceRange.minVariantPrice.amount).toFixed(2)}`,
-    img: e.node.images.edges[0]?.node.url ?? "/placeholder.jpg",
+    img: e.node.images.edges[0]?.node.url,
     alt: e.node.images.edges[0]?.node.altText ?? e.node.title,
     tag: e.node.tags[0] ?? "New",
     variantId: e.node.variants.edges[0]?.node.id,
