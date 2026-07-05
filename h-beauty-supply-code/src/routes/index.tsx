@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useProducts } from "@/hooks/useShopify";
 import { ShoppingBag, Menu, Star, MapPin, Instagram, Music2, Plus } from "lucide-react";
 import logo from "@/assets/logo.png";
 import hero from "@/assets/hero.jpg";
@@ -34,7 +35,7 @@ const CATEGORIES = [
   { name: "Accessories", img: catAccessories, href: "#accessories" },
 ];
 
-const PRODUCTS = [
+const STATIC_PRODUCTS = [
   { name: "Silk Straight 24\" Lace Front", price: "$149", tag: "Bestseller", img: p1 },
   { name: "Honey Body Wave 22\" Wig", price: "$179", tag: "New", img: p2 },
   { name: "Passion Twist Crochet 18\"", price: "$18", tag: "Restock", img: p3 },
@@ -49,6 +50,8 @@ const MARQUEE = [
 ];
 
 function Index() {
+  const { products: shopifyProducts, loading } = useProducts();
+  const PRODUCTS = shopifyProducts.length > 0 ? shopifyProducts : STATIC_PRODUCTS;
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* NAV */}
@@ -317,3 +320,4 @@ function Index() {
     </div>
   );
 }
+// Shopify hook added
